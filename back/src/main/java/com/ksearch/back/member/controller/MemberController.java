@@ -2,9 +2,7 @@ package com.ksearch.back.member.controller;
 
 import com.ksearch.back.member.dto.MemberDto;
 import com.ksearch.back.member.service.MemberService;
-import groovy.util.logging.Slf4j;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,14 +11,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
-import java.util.logging.Logger;
 
 @RequiredArgsConstructor
 @Controller
-@Slf4j
 public class MemberController {
     private final MemberService memberService;
-    private Logger logger;
 
     @GetMapping("/member/signIn")
     public String getSignInPage() {

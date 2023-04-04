@@ -28,6 +28,13 @@ spring:
     check-template-location: true
     cache: false
 
+  redis:
+    cluster:
+      nodes:
+        - 192.168.211.31:6379
+        - 192.168.211.32:6379
+        - 192.168.211.33:6379
+
 jwt:
   secret:
     key: dongjjiidververysmartandhandsomeguyinjungdongjjiidververysmartandhandsomeguyinjungdongjjiidververysmartandhandsomeguyinjung
