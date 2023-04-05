@@ -1,5 +1,6 @@
 package com.ksearch.back.member.entity;
 
+import com.ksearch.back.event.entity.Event;
 import lombok.*;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import org.springframework.security.core.GrantedAuthority;
@@ -27,6 +28,9 @@ public class Member implements UserDetails {
     private String email;
 
     private String password;
+
+    @OneToMany
+    private List<Event> events;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

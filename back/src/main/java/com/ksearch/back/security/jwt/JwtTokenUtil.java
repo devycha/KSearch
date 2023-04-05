@@ -1,12 +1,15 @@
 package com.ksearch.back.security.jwt;
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -19,6 +22,35 @@ public class JwtTokenUtil {
     private String secret;
 
     public static final long JWT_TOKEN_VALIDITY = 5 * 60 * 60;
+
+    public String getUsernameFromCookie(HttpServletRequest request) {
+        Cookie[] cookies = request.getCookies();
+        String token = null;
+
+        for (Cookie cookie : cookies) {
+            if (cookie.getName().equals("access_token")) {
+                token = cookie.getValue();
+            }
+        }
+
+        String username = null;
+        String jwtToken = null;
+
+        if (token != null && token.startsWith("Bearer+")) {
+            jwtToken = token.substring(7);
+            try {
+                username = this.getUsernameFromToken(jwtToken);
+            } catch (IllegalArgumentException e) {
+                System.out.println("Unable to get JWT Token");
+            } catch (ExpiredJwtException e) {
+                System.out.println("JWT Token has expired");
+            }
+        } else {
+            System.out.println("JWT Token does not begin with Bearer String");
+        }
+
+        return username;
+    }
 
     public String getUsernameFromToken(String token) {
         return getClaimFromToken(token, Claims::getId);
