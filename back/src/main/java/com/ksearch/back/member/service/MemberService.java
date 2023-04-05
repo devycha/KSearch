@@ -2,21 +2,18 @@ package com.ksearch.back.member.service;
 
 import com.ksearch.back.error.exception.AuthException;
 import com.ksearch.back.error.type.AuthErrorCode;
-import com.ksearch.back.security.jwt.JwtTokenUtil;
 import com.ksearch.back.member.dto.MemberDto;
 import com.ksearch.back.member.entity.Member;
 import com.ksearch.back.member.repository.MemberRepository;
+import com.ksearch.back.security.jwt.JwtTokenUtil;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-public class MemberService implements UserDetailsService {
+public class MemberService {
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenUtil jwtTokenUtil;
@@ -40,12 +37,6 @@ public class MemberService implements UserDetailsService {
     public String signIn(MemberDto.SignInDto signInDto) {
         Member member = this.authenticateByEmailAndPassword(signInDto.getEmail(), signInDto.getPassword());
         return jwtTokenUtil.generateToken(member.getEmail());
-    }
-
-    @Override
-    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        return memberRepository.findByEmail(email)
-                .orElseThrow(() -> new AuthException(AuthErrorCode.MemberNotFound));
     }
 
     public Member authenticateByEmailAndPassword(String email, String password) {

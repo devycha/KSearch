@@ -1,11 +1,11 @@
 package com.ksearch.back.security.jwt;
 
-import com.ksearch.back.member.service.MemberService;
 import io.jsonwebtoken.ExpiredJwtException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -19,17 +19,14 @@ import java.io.IOException;
 import java.util.List;
 
 @Component
+@RequiredArgsConstructor
 public class JwtRequestFilter extends OncePerRequestFilter {
 
-    private final MemberService memberService;
+    private final UserDetailsService memberDetailsService;
     private final JwtTokenUtil jwtTokenUtil;
 
     private static final List<String> EXCLUDE_URL = List.of("/member/signIn", "/member/signUp");
 
-    public JwtRequestFilter(MemberService memberService, JwtTokenUtil jwtTokenUtil) {
-        this.memberService = memberService;
-        this.jwtTokenUtil = jwtTokenUtil;
-    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -48,7 +45,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
         String username = null;
         String jwtToken = null;
 
-        if (token != null && token.startsWith("Bearer ")) {
+        if (token != null && token.startsWith("Bearer+")) {
             jwtToken = token.substring(7);
             try {
                 username = jwtTokenUtil.getUsernameFromToken(jwtToken);
@@ -62,7 +59,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
         }
 
         if(username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = this.memberService.loadUserByUsername(username);
+            UserDetails userDetails = this.memberDetailsService.loadUserByUsername(username);
 
             if(jwtTokenUtil.validateToken(jwtToken, userDetails)) {
                 UsernamePasswordAuthenticationToken authenticationToken =

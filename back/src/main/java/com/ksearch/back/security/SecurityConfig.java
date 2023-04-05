@@ -1,12 +1,15 @@
 package com.ksearch.back.security;
 
+import com.ksearch.back.member.service.MemberDetailsService;
 import com.ksearch.back.member.service.MemberService;
 import com.ksearch.back.security.jwt.JwtAuthenticationEntryPoint;
 import com.ksearch.back.security.jwt.JwtRequestFilter;
 import com.ksearch.back.security.jwt.JwtTokenUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
@@ -20,9 +23,11 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @RequiredArgsConstructor
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
-    private JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
-    private MemberService memberService;
-    private JwtTokenUtil jwtTokenUtil;
+    private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
+
+    private final MemberDetailsService memberDetailsService;
+
+    private final JwtRequestFilter jwtRequestFilter;
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
@@ -41,7 +46,14 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .sessionManagement()
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS);
 
-        http.addFilterBefore(new JwtRequestFilter(memberService, jwtTokenUtil), UsernamePasswordAuthenticationFilter.class);
+        http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
+    }
+
+    @Override
+    protected void configure(AuthenticationManagerBuilder authenticationManagerBuilder) throws Exception {
+        authenticationManagerBuilder
+                .userDetailsService(memberDetailsService)
+                .passwordEncoder(passwordEncoder());
     }
 
     @Bean

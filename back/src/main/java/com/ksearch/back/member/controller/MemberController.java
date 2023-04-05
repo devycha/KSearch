@@ -37,7 +37,7 @@ public class MemberController {
         String token = memberService.signIn(signInDto);
 
         model.addAttribute("token", token);
-        Cookie cookie = new Cookie("access_token", "Bearer " + token);
+        Cookie cookie = new Cookie("access_token", "Bearer+" + token);
         cookie.setMaxAge(60 * 60 * 24); // 쿠키 유효시간 설정 (예: 1일)
         cookie.setPath("/"); // 쿠키의 유효 경로 설정 (예: 전체 경로)
         response.addCookie(cookie); // 응답 헤더에 쿠키 추가
