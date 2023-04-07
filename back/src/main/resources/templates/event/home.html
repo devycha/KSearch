@@ -1,10 +1,112 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
+<html>
+
+<head lang="en">
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>자동완성</title>
 </head>
+<style>
+    .hide {
+        display: none !important;
+    }
+
+    .rel_search {
+        display:flex;
+        flex-direction:column;
+        justify-content : space-around;
+        border: 1px solid red;
+        border-radius: 12px;
+
+    }
+
+
+    .pop_rel_keywords {
+        list-style: none;
+        margin-right: 30%;
+
+    }
+
+    .pop_rel_keywords > li {
+        line-height : 250%
+    }
+
+</style>
 <body>
-    
+<input class="search_input">
+<container class="rel_search">
+    <ul class="pop_rel_keywords">
+    </ul>
+</container>
+<script>
+    const ul = document.querySelector(".pop_rel_keywords");
+    const searchInput = document.querySelector(".search_input");
+    const relContainer = document.querySelector(".rel_search");
+    let cache = '';
+
+
+    const checkInput = () => {
+        const beforeInput = searchInput.value;
+        timer(beforeInput);
+    }
+
+
+    const timer = (beforeInput) => {
+        setTimeout(() => {
+
+            if(searchInput.value === beforeInput) {
+                console.log("입력멈춤");
+                loadData(searchInput.value);
+                checkInput();
+
+            } else {
+                console.log("입력변함");
+                checkInput();
+            }
+
+            if(searchInput.value === "") {
+                relContainer.classList.add("hide");
+            } else {
+                relContainer.classList.remove("hide");
+            }
+        }, 500);
+    }
+
+
+
+    const loadData = (input) => {
+        const url = `http://localhost:8080/event/search/recommendation?q=${input}`;
+
+        if(cache === url) return;
+        else {
+            cache = url;
+            fetch(url)
+                .then((res) => res.json())
+                .then(res => {
+                    console.log(res)
+                    fillSearch(res)
+                })
+        }
+    }
+
+    const fillSearch = (suggestArr) => {
+        ul.innerHTML = "";
+        suggestArr.forEach((el, idx) => {
+            const li = document.createElement("li");
+            const a = document.createElement("a");
+            a.setAttribute('href', `/event/search?q=${el}`)
+            a.appendChild(document.createTextNode(el))
+            li.appendChild(a);
+            console.log(li)
+
+            ul.appendChild(li);
+        })
+        const liList = document.querySelectorAll(".pop_rel_keywords li");
+    }
+    const highlightText = () => {
+    }
+    checkInput();
+
+</script>
 </body>
+
 </html>

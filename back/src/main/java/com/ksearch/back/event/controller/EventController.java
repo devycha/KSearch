@@ -52,8 +52,9 @@ public class EventController {
     public List<String> searchRecommendation(
             @RequestParam("q") String value
     ) {
-        System.out.println(value);
-        return eventService.searchRecommendation(value);
+        List<String> result = eventService.searchRecommendation(value);
+        System.out.println(result);
+        return result;
     }
 
     @GetMapping("/event/search")
