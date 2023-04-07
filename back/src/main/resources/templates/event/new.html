@@ -5,6 +5,32 @@
     <title>Title</title>
 </head>
 <body>
+    .
+    <form action="/event/new" method="POST">
+        <div>
+            <label for="title">이벤트 제목: </label>
+            <input id="title" name="title" type="text">
+        </div>
 
+        <br>
+        <div>
+            <label for="description">이벤트 설명: </label>
+            <textarea id="description" name="description" type="text"></textarea>
+        </div>
+        <br>
+
+        <div>
+            <label for="amount">이벤트 수량: </label>
+            <input id="amount" name="amount" type="number">
+        </div>
+        <br>
+
+        <div>
+            <label for="deadline">이벤트 종료일: </label>
+            <input id="deadline" name="deadline" type="date">
+        </div>
+        <br>
+        <button type="submit">이벤트 생성</button>
+    </form>
 </body>
 </html>

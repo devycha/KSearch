@@ -35,3 +35,7 @@ jwt:
 logging:
   level:
     root: INFO
+
+elasticsearch:
+  host: localhost
+  port: 9200

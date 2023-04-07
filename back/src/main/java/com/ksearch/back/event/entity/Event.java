@@ -22,9 +22,11 @@ public class Event {
 
     private String description;
 
+    private LocalDate deadline;
+
     private Integer amount;
 
-    private LocalDate deadline;
+    private Integer rest;
 
     @ManyToOne(targetEntity = Member.class, fetch = FetchType.LAZY)
     private Member author;
