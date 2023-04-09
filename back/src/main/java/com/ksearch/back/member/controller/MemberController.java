@@ -41,7 +41,7 @@ public class MemberController {
         cookie.setMaxAge(60 * 60 * 24); // 쿠키 유효시간 설정 (예: 1일)
         cookie.setPath("/"); // 쿠키의 유효 경로 설정 (예: 전체 경로)
         response.addCookie(cookie); // 응답 헤더에 쿠키 추가
-        return "index";
+        return "redirect:/event";
     }
 
     @GetMapping("/member/signUp")

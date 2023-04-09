@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
+import java.util.Map;
 
 @Controller
 @RequiredArgsConstructor
@@ -63,7 +64,15 @@ public class EventController {
             Model model
     ) {
         System.out.println(value);
-        model.addAttribute("results", eventService.searchEvent(value));
+        model.addAttribute("events", eventService.searchEvent(value));
         return "event/search-result";
+    }
+
+    @GetMapping("/event/search/rank")
+    public String getEventSearchRank(
+            Model model
+    ) {
+        model.addAttribute("map", eventService.getEventSearchRank());
+        return "event/real-time";
     }
 }

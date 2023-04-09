@@ -1,10 +1,29 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>Title</title>
+    <title>Event List</title>
 </head>
 <body>
-
+<h1>Event List</h1>
+<table>
+    <thead>
+    <tr>
+        <th>Title</th>
+        <th>Description</th>
+        <th>Deadline</th>
+        <th>Amount</th>
+        <th>Rest</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="event : ${events}">
+        <td th:text="${event.title}"></td>
+        <td th:text="${event.description}"></td>
+        <td th:text="${event.deadline}"></td>
+        <td th:text="${event.amount}"></td>
+        <td th:text="${event.rest}"></td>
+    </tr>
+    </tbody>
+</table>
 </body>
 </html>

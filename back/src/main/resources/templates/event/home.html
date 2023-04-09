@@ -32,11 +32,19 @@
 
 </style>
 <body>
-<input class="search_input">
+<label for="search_value"> 검색어를 입력하세요: </label>
+<input type="text" id="search_value" class="search_input" onkeydown="if(event.keyCode==13) search()">
+<button onclick="search()">Search</button>
 <container class="rel_search">
     <ul class="pop_rel_keywords">
     </ul>
 </container>
+<script>
+    function search() {
+        var input = document.getElementById("search_value").value;
+        window.location.href = "/event/search?q=" + input;
+    }
+</script>
 <script>
     const ul = document.querySelector(".pop_rel_keywords");
     const searchInput = document.querySelector(".search_input");

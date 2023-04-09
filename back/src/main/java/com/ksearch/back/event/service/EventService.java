@@ -11,11 +11,16 @@ import com.ksearch.back.security.jwt.JwtTokenUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.ksearch.back.error.type.AuthErrorCode.MemberNotFound;
@@ -27,6 +32,9 @@ public class EventService {
     private final EventSearchRepository eventSearchRepository;
     private final JwtTokenUtil jwtTokenUtil;
     private final MemberRepository memberRepository;
+
+    private final RedisTemplate<String, Object> redisTemplate;
+    private static final String POST_VIEW_COUNT_PREFIX = "event:searchCount:";
 
     @Transactional
     public EventDto.CreateEventResponseDto createEvent(
@@ -60,6 +68,15 @@ public class EventService {
     }
 
     public List<EventDto.EventResponseDto> searchEvent(String value) {
+        String key = POST_VIEW_COUNT_PREFIX + value;
+        Long viewCount = (Long) redisTemplate.opsForValue().get(key);
+
+        if (viewCount == null) {
+            redisTemplate.opsForValue().set(key, 1);
+        } else {
+            redisTemplate.opsForValue().set(key, viewCount + 1);
+        }
+
         return eventSearchRepository
                 .findAllByTitleIsContainingOrDescriptionIsContaining(value, value)
                 .stream().map(event -> EventDto.EventResponseDto.fromDocument(event))
@@ -71,5 +88,17 @@ public class EventService {
                 .findAllByTitleIsContaining(value)
                 .stream().map(event -> event.getTitle())
                 .collect(Collectors.toList());
+    }
+
+    public Map<String, String> getEventSearchRank() {
+        Set<String> keys = redisTemplate.keys("event:searchCount:*");
+        if (keys == null || keys.isEmpty()) {
+            System.out.println("No search counts found");
+            return null;
+        }
+
+        return redisTemplate.opsForValue().multiGet(keys).stream()
+                .filter(Objects::nonNull)
+                .collect(Collectors.toMap(key -> key.toString().split(":")[2], value -> value.toString()));
     }
 }
