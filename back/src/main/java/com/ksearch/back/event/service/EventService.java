@@ -1,6 +1,8 @@
 package com.ksearch.back.event.service;
 
 import com.ksearch.back.error.exception.AuthException;
+import com.ksearch.back.error.exception.EventException;
+import com.ksearch.back.error.type.EventErrorCode;
 import com.ksearch.back.event.dto.EventDto;
 import com.ksearch.back.event.entity.Event;
 import com.ksearch.back.event.repository.EventRepository;
@@ -17,6 +19,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.SessionCallback;
 import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.servlet.http.HttpServletRequest;
@@ -25,6 +28,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.ksearch.back.error.type.AuthErrorCode.MemberNotFound;
+import static com.ksearch.back.error.type.EventErrorCode.EventNotFound;
 
 @Service
 @RequiredArgsConstructor
@@ -114,5 +118,23 @@ public class EventService {
         }
 
         return sortedMap;
+    }
+
+    public EventDto.EventDetailResponseDto getEventDetail(Long eventId) {
+        return EventDto.EventDetailResponseDto.fromEntity(
+                eventRepository.findById(eventId).orElseThrow(
+                        () -> new EventException(EventNotFound))
+        );
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public boolean participateEvent(Long eventId) {
+        Event event = eventRepository.findById(eventId).orElseThrow(
+                () -> new EventException(EventNotFound)
+        );
+
+        event.decrease();
+        eventRepository.saveAndFlush(event);
+        return true;
     }
 }

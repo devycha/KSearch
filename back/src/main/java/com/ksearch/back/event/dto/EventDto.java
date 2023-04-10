@@ -71,4 +71,28 @@ public class EventDto {
                     .build();
         }
     }
+
+    @Data
+    @Builder
+    public static class EventDetailResponseDto {
+        public Long id;
+        public String title;
+        public String description;
+        public LocalDate deadline;
+        public Integer amount;
+        public String author;
+        public Integer rest;
+
+        public static EventDetailResponseDto fromEntity(Event event) {
+            return EventDetailResponseDto.builder()
+                    .id(event.getId())
+                    .title(event.getTitle())
+                    .description(event.getDescription())
+                    .deadline(event.getDeadline())
+                    .amount(event.getAmount())
+                    .rest(event.getRest())
+                    .author(event.getAuthor().getName())
+                    .build();
+        }
+    }
 }

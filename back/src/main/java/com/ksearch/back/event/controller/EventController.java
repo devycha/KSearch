@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
-import java.util.Map;
 
 @Controller
 @RequiredArgsConstructor
@@ -44,8 +43,20 @@ public class EventController {
     }
 
     @GetMapping("/event/{eventId}/detail")
-    public String getEventDetail() {
+    public String getEventDetail(
+            @PathVariable("eventId") Long eventId,
+            Model model
+    ) {
+        model.addAttribute("event", eventService.getEventDetail(eventId));
         return "event/detail";
+    }
+
+    @ResponseBody
+    @PostMapping("/event/{eventId}/participate")
+    public boolean participateEvent(
+            @PathVariable("eventId") Long eventId
+    ) {
+        return eventService.participateEvent(eventId);
     }
 
     @ResponseBody
@@ -53,9 +64,7 @@ public class EventController {
     public List<String> searchRecommendation(
             @RequestParam("q") String value
     ) {
-        List<String> result = eventService.searchRecommendation(value);
-        System.out.println(result);
-        return result;
+        return eventService.searchRecommendation(value);
     }
 
     @GetMapping("/event/search")
@@ -63,7 +72,6 @@ public class EventController {
             @RequestParam("q") String value,
             Model model
     ) {
-        System.out.println(value);
         model.addAttribute("events", eventService.searchEvent(value));
         return "event/search-result";
     }

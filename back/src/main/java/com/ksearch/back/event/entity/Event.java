@@ -1,5 +1,7 @@
 package com.ksearch.back.event.entity;
 
+import com.ksearch.back.error.exception.EventException;
+import com.ksearch.back.error.type.EventErrorCode;
 import com.ksearch.back.member.entity.Member;
 import lombok.*;
 
@@ -28,6 +30,13 @@ public class Event {
 
     private Integer rest;
 
-    @ManyToOne(targetEntity = Member.class, fetch = FetchType.LAZY)
+    @ManyToOne(targetEntity = Member.class)
     private Member author;
+
+    public void decrease() {
+        if (this.rest == 0) {
+            throw new EventException(EventErrorCode.OutOfStock);
+        }
+        this.rest -= 1;
+    }
 }
