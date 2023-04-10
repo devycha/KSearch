@@ -9,15 +9,19 @@
 <table>
     <thead>
     <tr>
-        <th>Key</th>
-        <th>Value</th>
+        <th>순위</th>
+        <th>검색어</th>
+        <th>검색횟수</th>
     </tr>
     </thead>
     <tbody>
-    <tr th:each="entry : ${map.entrySet()}">
+    <div th:if="${map != null}">
+    <tr th:each="entry, iterStat : ${map.entrySet()}">
+        <td th:text="${iterStat.count}"></td>
         <td th:text="${entry.key}"></td>
         <td th:text="${entry.value}"></td>
     </tr>
+    </div>
     </tbody>
 </table>
 

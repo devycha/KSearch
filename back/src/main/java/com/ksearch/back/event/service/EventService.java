@@ -9,19 +9,20 @@ import com.ksearch.back.member.entity.Member;
 import com.ksearch.back.member.repository.MemberRepository;
 import com.ksearch.back.security.jwt.JwtTokenUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.redis.core.RedisOperations;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.SessionCallback;
 import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.ksearch.back.error.type.AuthErrorCode.MemberNotFound;
 
@@ -69,7 +70,8 @@ public class EventService {
 
     public List<EventDto.EventResponseDto> searchEvent(String value) {
         String key = POST_VIEW_COUNT_PREFIX + value;
-        Long viewCount = (Long) redisTemplate.opsForValue().get(key);
+        System.out.println("Value: " + redisTemplate.opsForValue().get(key));
+        Integer viewCount = (Integer) redisTemplate.opsForValue().get(key);
 
         if (viewCount == null) {
             redisTemplate.opsForValue().set(key, 1);
@@ -90,15 +92,27 @@ public class EventService {
                 .collect(Collectors.toList());
     }
 
-    public Map<String, String> getEventSearchRank() {
-        Set<String> keys = redisTemplate.keys("event:searchCount:*");
+    public Map<String, Integer> getEventSearchRank() {
+        Set<String> keys = redisTemplate.keys("*" + "event:searchCount" + "*");
         if (keys == null || keys.isEmpty()) {
             System.out.println("No search counts found");
-            return null;
+            return new HashMap<>();
         }
 
-        return redisTemplate.opsForValue().multiGet(keys).stream()
-                .filter(Objects::nonNull)
-                .collect(Collectors.toMap(key -> key.toString().split(":")[2], value -> value.toString()));
+        Map<String, Integer> hashMap = new HashMap<>();
+        for (String key : keys) {
+            hashMap.put(key.split(":")[2], Integer.parseInt(redisTemplate.opsForValue().get(key).toString()));
+        }
+
+        ArrayList<Map.Entry<String, Integer>> entries = new ArrayList<>(hashMap.entrySet());
+        Collections.sort(entries, (o1, o2) -> o2.getValue().compareTo(o1.getValue()));
+
+        // 정렬된 Map 생성
+        Map<String, Integer> sortedMap = new LinkedHashMap<>();
+        for (Map.Entry<String, Integer> entry : entries) {
+            sortedMap.put(entry.getKey(), entry.getValue());
+        }
+
+        return sortedMap;
     }
 }
