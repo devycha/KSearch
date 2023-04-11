@@ -1,5 +1,7 @@
 package com.ksearch.back.event.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.ksearch.back.aspect.Loggable;
 import com.ksearch.back.event.dto.EventDto.CreateEventRequestDto;
 import com.ksearch.back.event.dto.EventDto.CreateEventResponseDto;
 import com.ksearch.back.event.service.EventService;
@@ -51,6 +53,7 @@ public class EventController {
         return "event/detail";
     }
 
+    @Loggable
     @ResponseBody
     @PostMapping("/event/{eventId}/participate")
     public boolean participateEvent(
@@ -63,10 +66,11 @@ public class EventController {
     @GetMapping("/event/search/recommendation")
     public List<String> searchRecommendation(
             @RequestParam("q") String value
-    ) {
+    ) throws JsonProcessingException {
         return eventService.searchRecommendation(value);
     }
 
+    @Loggable
     @GetMapping("/event/search")
     public String searchEvent(
             @RequestParam("q") String value,

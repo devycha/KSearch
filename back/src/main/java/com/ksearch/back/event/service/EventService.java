@@ -1,8 +1,11 @@
 package com.ksearch.back.event.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ksearch.back.error.exception.AuthException;
 import com.ksearch.back.error.exception.EventException;
-import com.ksearch.back.error.type.EventErrorCode;
+import com.ksearch.back.event.dto.ElasticSearchResponseDto;
 import com.ksearch.back.event.dto.EventDto;
 import com.ksearch.back.event.entity.Event;
 import com.ksearch.back.event.repository.EventRepository;
@@ -11,21 +14,20 @@ import com.ksearch.back.member.entity.Member;
 import com.ksearch.back.member.repository.MemberRepository;
 import com.ksearch.back.security.jwt.JwtTokenUtil;
 import lombok.RequiredArgsConstructor;
-import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.redis.core.RedisOperations;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.SessionCallback;
-import org.springframework.security.core.parameters.P;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static com.ksearch.back.error.type.AuthErrorCode.MemberNotFound;
 import static com.ksearch.back.error.type.EventErrorCode.EventNotFound;
@@ -89,11 +91,68 @@ public class EventService {
                 .collect(Collectors.toList());
     }
 
-    public List<String> searchRecommendation(String value) {
-        return eventSearchRepository
-                .findAllByTitleIsContaining(value)
-                .stream().map(event -> event.getTitle())
-                .collect(Collectors.toList());
+    public List<String> searchRecommendation(String value) throws JsonProcessingException {
+        Set<String> recommendList = new HashSet<>();
+
+        RestTemplate restTemplate = new RestTemplate();
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+
+        /** 자동 완성 검색어 추천 */
+        String url = "http://localhost:9200/ac_test/_search";
+        String requestBody = "{\"query\": {\"match\": {\"name_ngram\": \"" + value + "\"}}}";
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<String> entity = new HttpEntity<String>(requestBody, headers);
+        String responseBody = restTemplate.postForEntity(url, entity, String.class).getBody();
+
+        ElasticSearchResponseDto result = objectMapper.readValue(responseBody, ElasticSearchResponseDto.class);
+        result.getHits().getHits().forEach(hit -> {
+            recommendList.add(hit.get_source().getName());
+        });
+
+        /** 초성 검색 */
+        url = "http://localhost:9200/chosung_test/_search";
+        requestBody = "{\"query\": {\"match\": {\"name_chosung\": \"" + value + "\"}}}";
+        headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        entity = new HttpEntity<String>(requestBody, headers);
+        responseBody = restTemplate.postForEntity(url, entity, String.class).getBody();
+
+        result = objectMapper.readValue(responseBody, ElasticSearchResponseDto.class);
+        result.getHits().getHits().forEach(hit -> {
+            recommendList.add(hit.get_source().getName());
+        });
+
+        /** 한 -> 영 검색 */
+        url = "http://localhost:9200/haneng_test/_search";
+        requestBody = "{\"query\": {\"match\": {\"name_hantoeng\": \"" + value + "\"}}}";
+        headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        entity = new HttpEntity<String>(requestBody, headers);
+        responseBody = restTemplate.postForEntity(url, entity, String.class).getBody();
+
+        result = objectMapper.readValue(responseBody, ElasticSearchResponseDto.class);
+        result.getHits().getHits().forEach(hit -> {
+            recommendList.add(hit.get_source().getName());
+        });
+
+        /** 영 -> 한 검색 */
+        url = "http://localhost:9200/haneng_test/_search";
+        requestBody = "{\"query\": {\"match\": {\"name_engtohan\": \"" + value + "\"}}}";
+        headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        entity = new HttpEntity<String>(requestBody, headers);
+        responseBody = restTemplate.postForEntity(url, entity, String.class).getBody();
+
+        result = objectMapper.readValue(responseBody, ElasticSearchResponseDto.class);
+        result.getHits().getHits().forEach(hit -> {
+            recommendList.add(hit.get_source().getName());
+        });
+
+        System.out.println(recommendList);
+        return new ArrayList<>(recommendList);
     }
 
     public Map<String, Integer> getEventSearchRank() {

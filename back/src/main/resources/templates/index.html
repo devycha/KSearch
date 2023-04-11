@@ -75,6 +75,10 @@
 
 
     const loadData = (input) => {
+        if (input === " " || input === "") {
+            return;
+        }
+
         const url = `http://localhost:3000/search/keyword?q=${input}`;
 
         if(cache === url) return;
