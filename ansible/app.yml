@@ -1,0 +1,18 @@
+- name: Install and configure Spring Boot app servers
+  hosts: app_servers
+  become: true
+  tasks:
+  - name: Install OpenJDK 11
+    package:
+      name: java-11-openjdk
+      state: present
+  - name: Copy app jar files
+    copy:
+      src: app.jar
+      dest: /home/user/app.jar
+  - name: Configure Systemd service
+    template:
+      src: app.service.j2
+      dest: /etc/systemd/system/app.service
+    notify:
+    - Restart App

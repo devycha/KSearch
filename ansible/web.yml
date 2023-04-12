@@ -1,0 +1,14 @@
+- name: Install Nginx on CentOS 8 servers
+  hosts: nginx_servers
+  become: true
+  tasks:
+  - name: Install Nginx
+    package:
+      name: nginx
+      state: present
+  - name: Configure Nginx
+    template:
+      src: nginx.conf.j2
+      dest: /etc/nginx/nginx.conf
+    notify:
+    - Restart Nginx

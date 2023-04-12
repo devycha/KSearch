@@ -1,0 +1,14 @@
+- name: Install and configure Elasticsearch cluster
+  hosts: elasticsearch_servers
+  become: true
+  tasks:
+  - name: Install Elasticsearch
+    package:
+      name: elasticsearch
+      state: present
+  - name: Configure Elasticsearch
+    template:
+      src: elasticsearch.yml.j2
+      dest: /etc/elasticsearch/elasticsearch.yml
+    notify:
+    - Restart Elasticsearch

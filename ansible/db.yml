@@ -1,0 +1,62 @@
+- name: Configure MySQL database replication
+  hosts: mysql_servers
+  become: true
+  vars:
+    mysql_replication_user: repl
+    mysql_replication_password: password
+    mysql_master_host: mysql_server1
+  tasks:
+  - name: Install MySQL server
+    package:
+      name: mysql-server
+      state: present
+  - name: Start MySQL service
+    service:
+      name: mysqld
+      state: started
+  - name: Configure MySQL server
+    template:
+      src: my.cnf.j2
+      dest: /etc/my.cnf
+    notify:
+    - Restart MySQL
+  - name: Create MySQL replication user
+    mysql_user:
+      login_user: root
+      login_password: root_password
+      name: "{{ mysql_replication_user }}"
+      password: "{{ mysql_replication_password }}"
+      priv: "*.*:REPLICATION SLAVE"
+      host: "%"
+  - name: Get master status
+    mysql_replication:
+      mode: get_master
+      login_user: root
+      login_password: root_password
+    register: master_status
+  - name: Create replication user on master
+    mysql_user:
+      login_user: root
+      login_password: root_password
+      name: "{{ mysql_replication_user }}"
+      password: "{{ mysql_replication_password }}"
+      priv: "*.*:REPLICATION SLAVE"
+      host: "{{ hostvars[mysql_master_host].ansible_host }}"
+  - name: Configure replication on slave
+    mysql_replication:
+      mode: change_master
+      login_user: root
+      login_password: root_password
+      master_host: "{{ hostvars[mysql_master_host].ansible_host }}"
+      master_user: "{{ mysql_replication_user }}"
+      master_password: "{{ mysql_replication_password }}"
+      master_port: 3306
+      master_log_file: "{{ master_status.File }}"
+      master_log_pos: "{{ master_status.Position }}"
+  - name: Start replication on slave
+    mysql_replication:
+      mode: start_slave
+      login_user: root
+      login_password: root_password
+    notify:
+    - Restart MySQL

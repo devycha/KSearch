@@ -1,0 +1,19 @@
+- name: Install and configure node_exporter on all servers
+  hosts: all
+  become: true
+  tasks:
+  - name: Install Node Exporter
+    get_url:
+      url: "{{ node_exporter_download_url }}"
+      dest: /opt/
+    unarchive:
+      dest: /opt/
+      src: "/opt/{{ node_exporter_download_url | basename }}"
+      remote_src: true
+      extra_opts:
+        - --no-same-owner
+  - name: Start Node Exporter
+    systemd:
+      name: node_exporter
+      state: started
+      enabled: yes

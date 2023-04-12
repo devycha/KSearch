@@ -1,0 +1,259 @@
+---
+- name: Install Nginx on CentOS 8 servers
+  hosts: nginx_servers
+  become: true
+  tasks:
+  - name: Install Nginx
+    package:
+      name: nginx
+      state: present
+  - name: Configure Nginx
+    template:
+      src: nginx.conf.j2
+      dest: /etc/nginx/nginx.conf
+    notify:
+    - Restart Nginx
+
+- name: Install and configure Spring Boot app servers
+  hosts: app_servers
+  become: true
+  tasks:
+  - name: Install OpenJDK 11
+    package:
+      name: java-11-openjdk
+      state: present
+  - name: Copy app jar files
+    copy:
+      src: app.jar
+      dest: /home/user/app.jar
+  - name: Configure Systemd service
+    template:
+      src: app.service.j2
+      dest: /etc/systemd/system/app.service
+    notify:
+    - Restart App
+
+- name: Configure MySQL database replication
+  hosts: mysql_servers
+  become: true
+  vars:
+    mysql_replication_user: repl
+    mysql_replication_password: password
+    mysql_master_host: mysql_server1
+  tasks:
+  - name: Install MySQL server
+    package:
+      name: mysql-server
+      state: present
+  - name: Start MySQL service
+    service:
+      name: mysqld
+      state: started
+  - name: Configure MySQL server
+    template:
+      src: my.cnf.j2
+      dest: /etc/my.cnf
+    notify:
+    - Restart MySQL
+  - name: Create MySQL replication user
+    mysql_user:
+      login_user: root
+      login_password: root_password
+      name: "{{ mysql_replication_user }}"
+      password: "{{ mysql_replication_password }}"
+      priv: "*.*:REPLICATION SLAVE"
+      host: "%"
+  - name: Get master status
+    mysql_replication:
+      mode: get_master
+      login_user: root
+      login_password: root_password
+    register: master_status
+  - name: Create replication user on master
+    mysql_user:
+      login_user: root
+      login_password: root_password
+      name: "{{ mysql_replication_user }}"
+      password: "{{ mysql_replication_password }}"
+      priv: "*.*:REPLICATION SLAVE"
+      host: "{{ hostvars[mysql_master_host].ansible_host }}"
+  - name: Configure replication on slave
+    mysql_replication:
+      mode: change_master
+      login_user: root
+      login_password: root_password
+      master_host: "{{ hostvars[mysql_master_host].ansible_host }}"
+      master_user: "{{ mysql_replication_user }}"
+      master_password: "{{ mysql_replication_password }}"
+      master_port: 3306
+      master_log_file: "{{ master_status.File }}"
+      master_log_pos: "{{ master_status.Position }}"
+  - name: Start replication on slave
+    mysql_replication:
+      mode: start_slave
+      login_user: root
+      login_password: root_password
+    notify:
+    - Restart MySQL
+
+- name: Install and configure Redis cluster
+  hosts: redis_servers
+  become: true
+  tasks:
+  - name: Install Redis
+    package:
+      name: redis
+      state: present
+  - name: Configure Redis
+    template:
+      src: redis.conf.j2
+      dest: /etc/redis.conf
+    notify:
+    - Restart Redis
+
+- name: Install and configure Elasticsearch cluster
+  hosts: elasticsearch_servers
+  become: true
+  tasks:
+  - name: Install Elasticsearch
+    package:
+      name: elasticsearch
+      state: present
+  - name: Configure Elasticsearch
+    template:
+      src: elasticsearch.yml.j2
+      dest: /etc/elasticsearch/elasticsearch.yml
+    notify:
+    - Restart Elasticsearch
+
+- name: Install and configure Kafka cluster
+  hosts: kafka_servers
+  become: true
+  vars:
+    kafka_zookeeper_connect: "zk1.example.com:2181,zk2.example.com:2181,zk3.example.com:2181"
+  tasks:
+  - name: Install Java
+    package:
+      name: java-11-openjdk
+      state: present
+  - name: Download and extract Kafka
+    get_url:
+      url: "{{ kafka_download_url }}"
+      dest: /opt/
+    unarchive:
+      dest: /opt/
+      src: "/opt/{{ kafka_download_url | basename }}"
+      remote_src: true
+      extra_opts:
+        - --no-same-owner
+  - name: Configure Kafka
+    template:
+      src: server.properties.j2
+      dest: /opt/kafka/config/server.properties
+  - name: Start Kafka service
+    systemd:
+      name: kafka
+      state: started
+      enabled: yes
+
+- name: Install and configure Logstash server
+  hosts: logstash_server
+  become: true
+  vars:
+    kafka_brokers: "kafka1.example.com:9092,kafka2.example.com:9092,kafka3.example.com:9092"
+  tasks:
+  - name: Install Logstash
+    package:
+      name: logstash
+      state: present
+  - name: Configure Logstash
+    template:
+      src: logstash.conf.j2
+      dest: /etc/logstash/conf.d/logstash.conf
+  - name: Start Logstash service
+    systemd:
+      name: logstash
+      state: started
+      enabled: yes
+
+- name: Install and configure monitoring server
+  hosts: monitoring_server
+  become: true
+  tasks:
+  - name: Install Node Exporter
+    get_url:
+      url: "{{ node_exporter_download_url }}"
+      dest: /opt/
+    unarchive:
+      dest: /opt/
+      src: "/opt/{{ node_exporter_download_url | basename }}"
+      remote_src: true
+      extra_opts:
+        - --no-same-owner
+  - name: Start Node Exporter
+    systemd:
+      name: node_exporter
+      state: started
+      enabled: yes
+  - name: Install Prometheus
+    get_url:
+      url: "{{ prometheus_download_url }}"
+      dest: /opt/
+    unarchive:
+      dest: /opt/
+      src: "/opt/{{ prometheus_download_url | basename }}"
+      remote_src: true
+      extra_opts:
+        - --no-same-owner
+  - name: Configure Prometheus
+    template:
+      src: prometheus.yml.j2
+      dest: /opt/prometheus/prometheus.yml
+    notify:
+    - Restart Prometheus
+  - name: Start Prometheus
+    systemd:
+      name: prometheus
+      state: started
+      enabled: yes
+  - name: Install Grafana
+    get_url:
+      url: "{{ grafana_download_url }}"
+      dest: /opt/
+    unarchive:
+      dest: /opt/
+      src: "/opt/{{ grafana_download_url | basename }}"
+      remote_src: true
+      extra_opts:
+        - --no-same-owner
+  - name: Configure Grafana
+    template:
+      src: grafana.ini.j2
+      dest: /opt/grafana/conf/defaults.ini
+    notify:
+    - Restart Grafana
+  - name: Start Grafana
+    systemd:
+      name: grafana-server
+      state: started
+      enabled: yes
+
+- name: Install and configure node_exporter on all servers
+  hosts: all
+  become: true
+  tasks:
+  - name: Install Node Exporter
+    get_url:
+      url: "{{ node_exporter_download_url }}"
+      dest: /opt/
+    unarchive:
+      dest: /opt/
+      src: "/opt/{{ node_exporter_download_url | basename }}"
+      remote_src: true
+      extra_opts:
+        - --no-same-owner
+  - name: Start Node Exporter
+    systemd:
+      name: node_exporter
+      state: started
+      enabled: yes

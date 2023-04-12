@@ -1,0 +1,14 @@
+- name: Install and configure Redis cluster
+  hosts: redis_servers
+  become: true
+  tasks:
+  - name: Install Redis
+    package:
+      name: redis
+      state: present
+  - name: Configure Redis
+    template:
+      src: redis.conf.j2
+      dest: /etc/redis.conf
+    notify:
+    - Restart Redis

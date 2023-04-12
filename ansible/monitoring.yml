@@ -1,0 +1,61 @@
+- name: Install and configure monitoring server
+  hosts: monitoring_server
+  become: true
+  tasks:
+  - name: Install Node Exporter
+    get_url:
+      url: "{{ node_exporter_download_url }}"
+      dest: /opt/
+    unarchive:
+      dest: /opt/
+      src: "/opt/{{ node_exporter_download_url | basename }}"
+      remote_src: true
+      extra_opts:
+        - --no-same-owner
+  - name: Start Node Exporter
+    systemd:
+      name: node_exporter
+      state: started
+      enabled: yes
+  - name: Install Prometheus
+    get_url:
+      url: "{{ prometheus_download_url }}"
+      dest: /opt/
+    unarchive:
+      dest: /opt/
+      src: "/opt/{{ prometheus_download_url | basename }}"
+      remote_src: true
+      extra_opts:
+        - --no-same-owner
+  - name: Configure Prometheus
+    template:
+      src: prometheus.yml.j2
+      dest: /opt/prometheus/prometheus.yml
+    notify:
+    - Restart Prometheus
+  - name: Start Prometheus
+    systemd:
+      name: prometheus
+      state: started
+      enabled: yes
+  - name: Install Grafana
+    get_url:
+      url: "{{ grafana_download_url }}"
+      dest: /opt/
+    unarchive:
+      dest: /opt/
+      src: "/opt/{{ grafana_download_url | basename }}"
+      remote_src: true
+      extra_opts:
+        - --no-same-owner
+  - name: Configure Grafana
+    template:
+      src: grafana.ini.j2
+      dest: /opt/grafana/conf/defaults.ini
+    notify:
+    - Restart Grafana
+  - name: Start Grafana
+    systemd:
+      name: grafana-server
+      state: started
+      enabled: yes

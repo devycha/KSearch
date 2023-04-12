@@ -1,0 +1,29 @@
+- name: Install and configure Kafka cluster
+  hosts: kafka_servers
+  become: true
+  vars:
+    kafka_zookeeper_connect: "zk1.example.com:2181,zk2.example.com:2181,zk3.example.com:2181"
+  tasks:
+  - name: Install Java
+    package:
+      name: java-11-openjdk
+      state: present
+  - name: Download and extract Kafka
+    get_url:
+      url: "{{ kafka_download_url }}"
+      dest: /opt/
+    unarchive:
+      dest: /opt/
+      src: "/opt/{{ kafka_download_url | basename }}"
+      remote_src: true
+      extra_opts:
+        - --no-same-owner
+  - name: Configure Kafka
+    template:
+      src: server.properties.j2
+      dest: /opt/kafka/config/server.properties
+  - name: Start Kafka service
+    systemd:
+      name: kafka
+      state: started
+      enabled: yes
